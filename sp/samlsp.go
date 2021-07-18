@@ -27,7 +27,8 @@ func samlAssertionHandler(w http.ResponseWriter, req *http.Request) {
 		log.Fatalf("Error %s\n", err.Error())
 	}
 	fmt.Println("-----XML----------")
-	fmt.Println(assertion)
+	w.Header().Add("Content-Type", "application/xml")
+	w.Write([]byte(assertion))
 
 }
 
@@ -63,7 +64,6 @@ func generateSAMLRequest(w http.ResponseWriter, req *http.Request) {
 	q.Add("SAMLRequest", s)
 	u.RawQuery = q.Encode()
 	w.Write([]byte(u.String()))
-	//http.Redirect(w, req, u.String(), 302)
 
 }
 
