@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"testing"
+	"time"
 )
 
 func TestCert(t *testing.T) {
@@ -15,10 +16,10 @@ func TestXMLGen(t *testing.T) {
 	req := &AuthnRequest{
 		SamlpAttr:       "urn:oasis:names:tc:SAML:2.0:protocol",
 		ID:              "123",
-		IssueInstant:    "2021-07-03T05:55:32Z",
+		IssueInstant:    time.Now().Format(time.RFC3339),
 		ProtocolBinding: "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
 		Version:         "2.0",
-		Issuer:          Issuer{Name: "urn:oasis:names:tc:SAML:2.0:assertion", Value: "http://msinghlocal.saml.com"},
+		Issuer:          Issuer{Namespace: "urn:oasis:names:tc:SAML:2.0:assertion", Value: "http://msinghlocal.saml.com"},
 	}
 	output, err := xml.MarshalIndent(req, "  ", "    ")
 	if err != nil {
