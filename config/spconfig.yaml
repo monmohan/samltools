@@ -1,0 +1,15 @@
+# Identity Provider Single Sign-On URL. 
+# By default its configured to use the AuthO IDP this tutorial was tested with
+ssoUrl: "https://dev-ejtl988w.auth0.com/samlp/lqrbWWMYc25UrCiYA5Pt06U625c4K6DO"
+# Port at which the Service Provider is accessible.
+# Changing the port would require you to change the settings of IDP since
+# the assertion is sent to the Service Provide URL which will include this port
+port: 4567
+# Host at which the Service Provider is accessible.
+# Changing the host would require you to change the settings of IDP since
+# the assertion is sent to the Service Provide URL which will include this host
+
+host: "msinghlocal.samltools.com"
+# http or https
+protocol : "http"
+

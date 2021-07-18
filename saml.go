@@ -3,8 +3,8 @@ package samltools
 import "encoding/xml"
 
 type Issuer struct {
-	Name  string `xml:"xmlns:saml,attr"`
-	Value string `xml:",chardata"`
+	Namespace string `xml:"xmlns:saml,attr"`
+	Value     string `xml:",chardata"`
 }
 type AuthnRequest struct {
 	XMLName         xml.Name `xml:"samlp:AuthnRequest"`

@@ -4,43 +4,18 @@ import (
 	"bytes"
 	"compress/flate"
 	"encoding/base64"
+	"encoding/xml"
 	"fmt"
 	"io"
-	"io/ioutil"
 	"log"
 	"math/rand"
 	"net/http"
 	"net/url"
-	"text/template"
 	"time"
+
+	"github.com/monmohan/samltools"
+	"github.com/spf13/viper"
 )
-
-const PORT = 4567
-
-type SAMLRequest struct {
-	Destination string
-	ID          string
-	Issuer      string
-}
-
-//const reqTemplate = `<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"    	Destination="{{.Destination}}"    ID="{{.ID}}"    IssueInstant="2021-07-03T05:55:32Z"    ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Version="2.0"><saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">{{.Issuer}}</saml:Issuer></samlp:AuthnRequest>`
-const reqTemplate = `<samlp:AuthnRequest xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"    ID="{{.ID}}"    IssueInstant="2021-07-03T05:55:32Z"    ProtocolBinding="urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect" Version="2.0"><saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">{{.Issuer}}</saml:Issuer></samlp:AuthnRequest>`
-
-func samlRequestHandler(w http.ResponseWriter, req *http.Request) {
-	body, _ := ioutil.ReadAll(req.Body)
-	fmt.Printf("Body \n %s", body)
-	var qv url.Values
-	var err error
-	if qv, err = url.ParseQuery(req.URL.RawQuery); err != nil {
-		log.Fatal(err)
-	}
-	r := qv.Get("SAMLRequest")
-	fmt.Printf("Incoming SAML Request %s\n", r)
-	if err := decodeSAMLRequest(r); err != nil {
-		log.Fatal(err)
-	}
-
-}
 
 func samlAssertionHandler(w http.ResponseWriter, req *http.Request) {
 	req.ParseForm()
@@ -56,54 +31,69 @@ func samlAssertionHandler(w http.ResponseWriter, req *http.Request) {
 
 }
 
-func sendSamlRequest(w http.ResponseWriter, req *http.Request) {
-	t := template.Must(template.New("samlRequest").Parse(reqTemplate))
-	samlReq := SAMLRequest{
-		//Destination: "http://msinghlocal.samltools.com:4567/assertion",
-		ID:     fmt.Sprintf("_%d", rand.Int()),
-		Issuer: "http://msinghlocal.saml.com",
-		//Issuer: "http://msinghlocal.samltools.com",
+func generateSAMLRequest(w http.ResponseWriter, req *http.Request) {
+	samlreq := &samltools.AuthnRequest{
+		SamlpAttr:       "urn:oasis:names:tc:SAML:2.0:protocol",
+		ID:              fmt.Sprintf("_%d", rand.Int()),
+		IssueInstant:    time.Now().Format(time.RFC3339),
+		ProtocolBinding: "urn:oasis:names:tc:SAML:2.0:bindings:HTTP-Redirect",
+		Version:         "2.0",
+		Issuer: samltools.Issuer{
+			Namespace: "urn:oasis:names:tc:SAML:2.0:assertion",
+			Value:     fmt.Sprintf("%s://%s", viper.GetString("protocol"), viper.GetString("host"))},
 	}
-	var buf bytes.Buffer
-	err := t.Execute(&buf, samlReq)
+	output, err := xml.MarshalIndent(samlreq, "  ", "    ")
+	decoded := req.URL.Query().Get("showdecoded")
+	if decoded != "" {
+		w.Header().Add("Content-Type", "application/xml")
+		w.Write(output)
+		return
+	}
+	if err != nil {
+		fmt.Printf("error: %v\n", err)
+	}
+	s, err := encodeSAMLRequest(output)
 	if err != nil {
 		log.Fatalf("Error %s\n", err.Error())
 	}
-	s, err := encodeSAMLRequest(buf.Bytes())
-	if err != nil {
-		log.Fatalf("Error %s\n", err.Error())
-	}
-	fmt.Println(s)
-	u, _ := url.Parse("https://dev-ejtl988w.auth0.com/samlp/lqrbWWMYc25UrCiYA5Pt06U625c4K6DO")
+
+	u, _ := url.Parse(viper.GetString("ssoUrl"))
 
 	q := u.Query()
 	q.Add("SAMLRequest", s)
 	u.RawQuery = q.Encode()
-	fmt.Println(u.String())
-	//http.Get(u.String())
+	w.Write([]byte(u.String()))
+	//http.Redirect(w, req, u.String(), 302)
+
 }
 
 func main() {
-	http.HandleFunc("/saml-tools", samlRequestHandler)
+	err := config()
+	if err != nil {
+		log.Fatalf("Unable to read config file, %s", err.Error())
+	}
 	http.HandleFunc("/assertion", samlAssertionHandler)
-	http.HandleFunc("/issue", sendSamlRequest)
+	http.HandleFunc("/issue", generateSAMLRequest)
+	fs := http.FileServer(http.Dir("../pages"))
+	http.Handle("/pages/", http.StripPrefix("/pages/", fs))
 	rand.Seed(time.Now().UnixNano())
-	log.Fatal(http.ListenAndServe(fmt.Sprintf("msinghlocal.samltools.com:%v", PORT), nil))
-	//req := "fZExT8MwEIVn/kXl3YnrxG1yaiIVdaASSFWpGFiQ6xgS5Ngh5wA/n8RhaJd6893zu3efNyhb08F28LU96q9Bo1/8tsYihEZBht6Ck9ggWNlqBK/gefv0CDxi0PXOO+UMWYznbje+baz0jbMFqb3vII5bbOxHbZySJpoMvXMGI+VaSMVqHU8lGmrBYr8ryNt7umQiz1KlkkRUQqfrXHN1FueM63yVsFmJOOi9RS+tLwhnfEnZivL1iQkQAhL+GmSH/4D3ja3GILe3Oc8ihIfT6UCPump6rTxZvOgew06jiJSbKTOE+f0FqdvWElH3ExhSTjI50mZQ6W+qP73Js+wHZlA0kKIBi0SK3Sa+GFfOt+vfKv8A"
-	//req := "fZExT8MwEIVn%2FkXl3YnrxG1yaiIVdaASSFWpGFiQ6xgS5Ngh5wA%2Fn8RhaJd6893zu3efNyhb08F28LU96q9Bo1%2F8tsYihEZBht6Ck9ggWNlqBK%2Fgefv0CDxi0PXOO%2BUMWYznbje%2Bbaz0jbMFqb3vII5bbOxHbZySJpoMvXMGI%2BVaSMVqHU8lGmrBYr8ryNt7umQiz1KlkkRUQqfrXHN1FueM63yVsFmJOOi9RS%2BtLwhnfEnZivL1iQkQAhL%2BGmSH%2F4D3ja3GILe3Oc8ihIfT6UCPump6rTxZvOgew06jiJSbKTOE%2Bf0FqdvWElH3ExhSTjI50mZQ6W%2BqP73Js%2BwHZlA0kKIBi0SK3Sa%2BGFfOt%2BvfKv8A"
+	serverUrl := fmt.Sprintf("%s:%v", viper.GetString("host"), viper.GetInt("port"))
+	fmt.Printf("Server URL : %s", serverUrl)
+	log.Fatal(http.ListenAndServe(serverUrl, nil))
 
 }
 
-func decodeSAMLRequest(req string) error {
+func config() error {
+	viper.SetConfigName("spconfig")
+	viper.SetConfigFile("../config/spconfig.yaml")
+	return viper.ReadInConfig()
+}
 
-	//urlDec, err := url.QueryUnescape(req)
-	//urlDec, err := base64.URLEncoding.DecodeString(req)
-	//fmt.Printf("%s\n", string(urlDec))
+func decodeSAMLRequest(req string) error {
 	data, err := base64.StdEncoding.DecodeString(string(req))
 	if err != nil {
 		return err
 	}
-	//fmt.Printf("%q\n", data)
 	zr := flate.NewReader(bytes.NewReader([]byte(data)))
 	var b bytes.Buffer
 	if _, err := io.Copy(&b, zr); err != nil {
@@ -118,10 +108,6 @@ func decodeSAMLRequest(req string) error {
 }
 
 func decodeSAMLResponse(req string) (string, error) {
-
-	//urlDec, err := url.QueryUnescape(req)
-	//urlDec, err := base64.URLEncoding.DecodeString(req)
-	//fmt.Printf("%s\n", string(urlDec))
 	data, err := base64.StdEncoding.DecodeString(string(req))
 	if err != nil {
 		return "", err
@@ -130,10 +116,6 @@ func decodeSAMLResponse(req string) (string, error) {
 }
 
 func encodeSAMLRequest(req []byte) (string, error) {
-	fmt.Printf("Input %s\n", string(req))
-	//urlDec, err := url.QueryUnescape(req)
-	//urlDec, err := base64.URLEncoding.DecodeString(req)
-	//fmt.Printf("%s\n", string(urlDec))
 	var buf bytes.Buffer
 
 	w, err := flate.NewWriter(&buf, 2)

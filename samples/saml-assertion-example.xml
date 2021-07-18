@@ -1,0 +1,90 @@
+<samlp:Response xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol" ID="_2e43366373b68376a336" InResponseTo="_5536853304964569377" Version="2.0" IssueInstant="2021-07-03T05:59:30.813Z" Destination="http://msinghlocal.samltools.com:4567/assertion">
+    <saml:Issuer xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion">urn:dev-ejtl988w.auth0.com</saml:Issuer>
+    <samlp:Status>
+        <samlp:StatusCode Value="urn:oasis:names:tc:SAML:2.0:status:Success"/>
+    </samlp:Status>
+    <saml:Assertion xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion" Version="2.0" ID="_fVLmdbYvzAm7FkIr7xnJkD9TrH3qGXQk" IssueInstant="2021-07-03T05:59:30.801Z">
+        <saml:Issuer>urn:dev-ejtl988w.auth0.com</saml:Issuer>
+        <Signature xmlns="http://www.w3.org/2000/09/xmldsig#">
+            <SignedInfo>
+                <CanonicalizationMethod Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                <SignatureMethod Algorithm="http://www.w3.org/2000/09/xmldsig#rsa-sha1"/>
+                <Reference URI="#_fVLmdbYvzAm7FkIr7xnJkD9TrH3qGXQk">
+                    <Transforms>
+                        <Transform Algorithm="http://www.w3.org/2000/09/xmldsig#enveloped-signature"/>
+                        <Transform Algorithm="http://www.w3.org/2001/10/xml-exc-c14n#"/>
+                    </Transforms>
+                    <DigestMethod Algorithm="http://www.w3.org/2000/09/xmldsig#sha1"/>
+                    <DigestValue>8dp5TtyLKZgfCMgMrC0OVAxoAxM=</DigestValue>
+                </Reference>
+            </SignedInfo>
+            <SignatureValue>TH4v6DwfeSDVDBFEXKvbQdqPI1dh7Z28Cm/uQOdJBYfhC5yFQr8pRDD/WO6khBohSFRq2AoN+EppipJtKLOCVJDrInkBjrsUDrbSOeGT0vjhzYcOAET/+wc7g8T1vWWI+si+an96TVXWsINRBvo6qTvwjX15ldL5inRDgP4xmKidTmdYqL/cobp3Wd+IT9ckHmPqnGbP9C/xmxaDn04CuxksO/UuYtL9EseRJNeyV1m9ehFg9QHrmFCf1Ga3giL5OZb4RNtkMB9cgZrgqq72/yB43dWcmaPsMPGc4pIZH9Y8hr64FZW03T5d/I/dIUl7nAAbXozZgP3/9TnbG8suFA==</SignatureValue>
+            <KeyInfo>
+                <X509Data>
+                    <X509Certificate>MIIDBzCCAe+gAwIBAgIJakoPho0MJr56MA0GCSqGSIb3DQEBCwUAMCExHzAdBgNVBAMTFmRldi1lanRsOTg4dy5hdXRoMC5jb20wHhcNMTkxMDI5MjIwNzIyWhcNMzMwNzA3MjIwNzIyWjAhMR8wHQYDVQQDExZkZXYtZWp0bDk4OHcuYXV0aDAuY29tMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAzkM1QHcP0v8bmwQ2fd3Pj6unCTx5k8LsW9cuLtUhAjjzRGpSEwGCKEgi1ej2+0Cxcs1t0wzhO+zSv1TJbsDI0x862PIFEs3xkGqPZU6rfQMzvCmncAcMjuW7r/Zewm0s58oRGyic1Oyp8xiy78czlBG03jk/+/vdttJkie8pUc9AHBuMxAaV4iPN3zSi/J5OVSlovk607H3AUiL3Bfg4ssS1bsJvaFG0kuNscoiP+qLRTjFK6LzZS99VxegeNzttqGbtj5BwNgbtuzrIyfLmYB/9VgEw+QdaQHvxoAvD0f7aYsaJ1R6rrqxo+1Pun7j1/h7kOCGB0UcHDLDw7gaP/wIDAQABo0IwQDAPBgNVHRMBAf8EBTADAQH/MB0GA1UdDgQWBBQwIoo6QzzUL/TcNVpLGrLdd3DAIzAOBgNVHQ8BAf8EBAMCAoQwDQYJKoZIhvcNAQELBQADggEBALb8QycRmauyC/HRWRxTbl0w231HTAVYizQqhFQFl3beSQIhexGik+H+B4ve2rv94QRD3LlraUp+J26wLG89EnSCuCo/OxPAq+lxO6hNf6oKJ+Y2f48awIOxolO0f89qX3KMIkABXwKbYUcd+SBHX5ZP1V9cvJEyH0s3Fq9ObysPCH2j2Hjgz3WMIffSFMaO0DIfh3eNnv9hKQwavUO7fL/jqhBl4QxI2gMySi0Ni7PgAlBgxBx6YUp59q/lzMgAf19GOEOvI7l4dA0bc9pdsm7OhimskvOUSZYi5Pz3n/i/cTVKKhlj6NyINkMXlXGgyM9vEBpdcIpOWn/1H5QVy8Q=</X509Certificate>
+                </X509Data>
+            </KeyInfo>
+        </Signature>
+        <saml:Subject>
+            <saml:NameID Format="urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified">auth0|5ffafb48d9ff9b0070c52eab</saml:NameID>
+            <saml:SubjectConfirmation Method="urn:oasis:names:tc:SAML:2.0:cm:bearer">
+                <saml:SubjectConfirmationData NotOnOrAfter="2021-07-03T06:59:30.801Z" Recipient="http://msinghlocal.samltools.com:4567/assertion" InResponseTo="_5536853304964569377"/>
+            </saml:SubjectConfirmation>
+        </saml:Subject>
+        <saml:Conditions NotBefore="2021-07-03T05:59:30.801Z" NotOnOrAfter="2021-07-03T06:59:30.801Z">
+            <saml:AudienceRestriction>
+                <saml:Audience>http://msinghlocal.saml.com</saml:Audience>
+            </saml:AudienceRestriction>
+        </saml:Conditions>
+        <saml:AuthnStatement AuthnInstant="2021-07-03T05:59:30.801Z" SessionIndex="_v2T2aYi_zAipP6xHHg5oOHvtcaQoDmXt">
+            <saml:AuthnContext>
+                <saml:AuthnContextClassRef>urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified</saml:AuthnContextClassRef>
+            </saml:AuthnContext>
+        </saml:AuthnStatement>
+        <saml:AttributeStatement xmlns:xs="http://www.w3.org/2001/XMLSchema"
+            xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+            <saml:Attribute Name="name" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml:AttributeValue xsi:type="xs:string">auth0|5ffafb48d9ff9b0070c52eab</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="email" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:basic">
+                <saml:AttributeValue xsi:type="xs:string">dev.null.dump.1@gmail.com</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.xmlsoap.org/ws/2005/05/identity/claims/upn" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:string">dev.null.dump.1@gmail.com</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/identities/default/provider" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:string">auth0</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/identities/default/connection" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:string">Username-Password-Authentication</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/identities/default/isSocial" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:boolean">false</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/clientID" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:string">lqrbWWMYc25UrCiYA5Pt06U625c4K6DO</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/created_at" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:anyType">Sun Jan 10 2021 13:04:08 GMT+0000 (Coordinated Universal Time)</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/email_verified" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:boolean">false</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/name" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:string">dev.null.dump.1@gmail.com</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/nickname" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:string">dev.null.dump.1</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/picture" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:string">https://s.gravatar.com/avatar/43557c58df84a54674e04d55899b2517?s=480&amp;r=pg&amp;d=https%3A%2F%2Fcdn.auth0.com%2Favatars%2Fde.png</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/updated_at" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:anyType">Fri Jul 02 2021 14:54:12 GMT+0000 (Coordinated Universal Time)</saml:AttributeValue>
+            </saml:Attribute>
+            <saml:Attribute Name="http://schemas.auth0.com/last_password_reset" NameFormat="urn:oasis:names:tc:SAML:2.0:attrname-format:uri">
+                <saml:AttributeValue xsi:type="xs:string">2021-01-12T06:06:27.687Z</saml:AttributeValue>
+            </saml:Attribute>
+        </saml:AttributeStatement>
+    </saml:Assertion>
+</samlp:Response>
