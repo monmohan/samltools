@@ -24,9 +24,9 @@ func samlAssertionHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
 	assertion, err = decodeSAMLResponse(assertion)
 	if err != nil {
-		log.Fatalf("Error %s\n", err.Error())
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
 	}
-	fmt.Println("-----XML----------")
 	w.Header().Add("Content-Type", "application/xml")
 	w.Write([]byte(assertion))
 

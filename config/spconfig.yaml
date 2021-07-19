@@ -9,7 +9,7 @@ port: 4567
 # Changing the host would require you to change the settings of IDP since
 # the assertion is sent to the Service Provide URL which will include this host
 
-host: "msinghlocal.samltools.com"
+host: "sp.samltools.com"
 # http or https
 protocol : "http"
 
