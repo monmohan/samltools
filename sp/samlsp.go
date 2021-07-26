@@ -18,10 +18,15 @@ import (
 )
 
 func samlAssertionHandler(w http.ResponseWriter, req *http.Request) {
+	var err error
 	req.ParseForm()
 	assertion := req.Form.Get("SAMLResponse")
-	fmt.Println(assertion)
-	var err error
+	err = samltools.ValidateAssertion(assertion)
+	if err != nil {
+		//Don't fail the request, just log it for now
+		fmt.Printf("Signature Validation failed \n %s \n", err.Error())
+	}
+
 	assertion, err = decodeSAMLResponse(assertion)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
