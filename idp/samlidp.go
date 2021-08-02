@@ -38,6 +38,10 @@ func handleLogonRequest(w http.ResponseWriter, req *http.Request) {
 
 }
 
+func generateSAMLResponse(inResponseTo string) {
+
+}
+
 func main() {
 	err := config()
 	if err != nil {
