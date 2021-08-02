@@ -9,8 +9,10 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"os"
 	"time"
 
+	"github.com/beevik/etree"
 	"github.com/spf13/viper"
 )
 
@@ -18,11 +20,21 @@ func handleLogonRequest(w http.ResponseWriter, req *http.Request) {
 
 	authnReq := req.URL.Query().Get("SAMLRequest")
 
-	err := decodeSAMLRequest(authnReq)
+	athnReqBytes, err := decodeSAMLRequest(authnReq)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		w.Write([]byte(err.Error()))
 	}
+	doc := etree.NewDocument()
+	if err := doc.ReadFromBytes(athnReqBytes); err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		w.Write([]byte(err.Error()))
+	}
+	//for debug purposes
+	doc.WriteTo(os.Stdout)
+
+	reqEl := doc.FindElement("./samlp:AuthnRequest")
+	fmt.Println(reqEl.SelectAttr("ID"))
 
 }
 
@@ -47,20 +59,20 @@ func config() error {
 	return viper.ReadInConfig()
 }
 
-func decodeSAMLRequest(req string) error {
+func decodeSAMLRequest(req string) (decoded []byte, err error) {
 	data, err := base64.StdEncoding.DecodeString(string(req))
 	if err != nil {
-		return err
+		return []byte{}, err
 	}
 	zr := flate.NewReader(bytes.NewReader([]byte(data)))
 	var b bytes.Buffer
 	if _, err := io.Copy(&b, zr); err != nil {
-		return err
+		return []byte{}, err
 	}
 	if err := zr.Close(); err != nil {
 		fmt.Println(err)
 	}
 
-	fmt.Printf("%s\n", string(b.Bytes()))
-	return nil
+	return b.Bytes(), nil
+
 }

@@ -79,39 +79,10 @@ func TestCreateAssertion(t *testing.T) {
 	createAttribute(attrStmts, "email", "dev.null.dump.1@gmail.com")
 	createAttribute(attrStmts, "userid", "IDPUser1")
 
-	/*canonicalizer := dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
-	dv, err := digest(doc.Root(), "", canonicalizer)
-	if err != nil {
-		t.Fatalf("failed to create digest %s", err.Error())
-	}
-	digestValue := base64.StdEncoding.EncodeToString(dv)
-	fmt.Println(digestValue)
-
-	signedInfo := createSignedInfo(digestValue, assertionID)
-	canonical, err := canonicalSerialize(signedInfo)
-	if err != nil {
-		t.Fatalf("failed to create cannonical serialize %s", err.Error())
-	}
-
-	hash := crypto.SHA1.New()
-	_, err = hash.Write(canonical)
-	if err != nil {
-		t.Fatalf("failed to create hash  %s", err.Error())
-	}
-
-	hashed := hash.Sum(nil)
-
-	signature, err := signWithPvtkey(hashed)
-	if err != nil {
-		t.Fatalf("failed to create signature  %s", err.Error())
-	}
-	sigValue := base64.StdEncoding.EncodeToString(signature)
-
-	addSignature(asEl, signedInfo, sigValue)*/
-
 	samlResp := createSAMLResponse(asEl, requestId)
 
-	randomKeyStore := dsig.RandomKeyStoreForTest()
+	//randomKeyStore := dsig.RandomKeyStoreForTest()
+	randomKeyStore := NewIDPKeyStore()
 	ctx := dsig.NewDefaultSigningContext(randomKeyStore)
 	// Sign the element
 	signedElement, err := ctx.SignEnveloped(asEl)
@@ -124,7 +95,7 @@ func TestCreateAssertion(t *testing.T) {
 	// the signature.
 	fdoc := etree.NewDocument()
 	fdoc.SetRoot(samlResp)
-	//fdoc.WriteTo(os.Stdout)
+	fdoc.WriteTo(os.Stdout)
 
 	bytes, err := fdoc.WriteToBytes()
 	if err != nil {
@@ -144,7 +115,7 @@ func TestCreateAssertion(t *testing.T) {
 
 	validationContext := dsig.NewDefaultValidationContext(&certificateStore)
 	validationContext.IdAttribute = "ID"
-	fmt.Println(resp)
+
 	err = ValidateAssertion(resp, validationContext)
 	if err != nil {
 		t.Fatalf("failed to validate signature  %s", err.Error())
@@ -310,4 +281,32 @@ func TestSignature(t *testing.T) {
 		log.Fatalf("check failed signature err %s\n", err.Error())
 
 	}
+}
+
+type IDPKeyStore struct {
+	key  *rsa.PrivateKey
+	cert []byte
+}
+
+func NewIDPKeyStore() dsig.X509KeyStore {
+	store := IDPKeyStore{}
+	pemBlock, _ := ioutil.ReadFile("config/idp-samltools-privatekey.key")
+	block, _ := pem.Decode(pemBlock)
+	if block == nil {
+		panic("failed to parse PEM block containing the private key")
+	}
+
+	pvt, err := x509.ParsePKCS8PrivateKey(block.Bytes)
+	if err != nil {
+		panic("failed to parse DER encoded public key: " + err.Error())
+	}
+	store.key = pvt.(*rsa.PrivateKey)
+	derBytesCert, err := base64.StdEncoding.DecodeString(certb64)
+	store.cert = derBytesCert
+	return &store
+
+}
+
+func (is *IDPKeyStore) GetKeyPair() (privateKey *rsa.PrivateKey, cert []byte, err error) {
+	return is.key, is.cert, nil
 }
