@@ -21,7 +21,7 @@ func samlAssertionHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
 	req.ParseForm()
 	assertion := req.Form.Get("SAMLResponse")
-	err = samltools.ValidateAssertion(assertion)
+	err = samltools.ValidateAssertion(assertion, nil)
 	if err != nil {
 		//Don't fail the request, just log it for now
 		fmt.Printf("Signature Validation failed \n %s \n", err.Error())

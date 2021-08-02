@@ -12,4 +12,6 @@ port: 4567
 host: "sp.samltools.com"
 # http or https
 protocol : "http"
+idp_host: "idp.samltools.com"
+sp_acs_url: "https://dev-ejtl988w.auth0.com/p/samlp/5aybgAvq"
 
