@@ -34,7 +34,7 @@ func handleLogonRequest(w http.ResponseWriter, req *http.Request) {
 	doc.WriteTo(os.Stdout)
 
 	reqEl := doc.FindElement("./samlp:AuthnRequest")
-	fmt.Println(reqEl.SelectAttr("ID"))
+	fmt.Println(reqEl.SelectAttr("ID").Value)
 
 }
 
