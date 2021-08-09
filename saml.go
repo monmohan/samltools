@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/beevik/etree"
+	perrors "github.com/pkg/errors"
 	dsig "github.com/russellhaering/goxmldsig"
 )
 
@@ -84,7 +85,7 @@ func defaultValidationContext(doc *etree.Document) (*dsig.ValidationContext, err
 	return validationContext, nil
 }
 
-func CreateSAMLResponse(inRespTo string) (string, error) {
+func CreateSAMLResponse(inRespTo string, recipient string, audience string) (string, error) {
 	mrand.Seed(time.Now().UnixNano())
 
 	//create assertion
@@ -98,11 +99,12 @@ func CreateSAMLResponse(inRespTo string) (string, error) {
 	asEl.CreateAttr("Version", "2.0")
 	asEl.CreateAttr("ID", assertionID)
 	asEl.CreateAttr("IssueInstant", issueTime)
+
 	//add Issuer
 	asEl.CreateElement("saml:Issuer").CreateText("http://idp.samltools.com")
 
-	addSubject(asEl, requestId, notOnOrAfter)
-	addConditions(asEl, notOnOrAfter)
+	addSubject(asEl, requestId, notOnOrAfter, recipient)
+	addConditions(asEl, notOnOrAfter, audience)
 	addAuthStatements(asEl, issueTime)
 
 	attrStmts := asEl.CreateElement("saml:AttributeStatement")
@@ -114,26 +116,24 @@ func CreateSAMLResponse(inRespTo string) (string, error) {
 
 	samlResp := createSAMLResponseElement(asEl, requestId)
 
-	//keyStore := dsig.RandomKeyStoreForTest()
 	keyStore := NewIDPKeyStore()
 	ctx := dsig.NewDefaultSigningContext(keyStore)
 	ctx.Canonicalizer = dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
+
 	// Sign the element
 	signedElement, err := ctx.SignEnveloped(asEl)
 	if err != nil {
-		panic(err)
+		return "", perrors.Wrap(err, "Signature generation failed")
 	}
 	samlResp.AddChild(signedElement)
-	// Serialize the signed element. It is important not to modify the element
-	// after it has been signed - even pretty-printing the XML will invalidate
-	// the signature.
+
+	// Serialize the Response with signed assertion
 	fdoc := etree.NewDocument()
 	fdoc.SetRoot(samlResp)
-	//fdoc.WriteTo(os.Stdout)
 
 	bytes, err := fdoc.WriteToBytes()
 	if err != nil {
-		panic(err)
+		return "", perrors.Wrap(err, "Failed to write bytes after adding signed element")
 	}
 	return base64.StdEncoding.EncodeToString(bytes), nil
 }
@@ -154,7 +154,7 @@ func createSAMLResponseElement(assertion *etree.Element, requestId string) *etre
 	return resp
 
 }
-func addSubject(assertionEl *etree.Element, requestId string, notOnOrAfter string) {
+func addSubject(assertionEl *etree.Element, requestId string, notOnOrAfter string, recipient string) {
 	subject := assertionEl.CreateElement("saml:Subject")
 	nameId := subject.CreateElement("saml:NameID")
 	nameId.CreateAttr("Format", "urn:oasis:names:tc:SAML:1.1:nameid-format:unspecified")
@@ -163,24 +163,24 @@ func addSubject(assertionEl *etree.Element, requestId string, notOnOrAfter strin
 	subjectConf.CreateAttr("Method", "urn:oasis:names:tc:SAML:2.0:cm:bearer")
 	subjectConfData := subjectConf.CreateElement("saml:SubjectConfirmationData")
 	subjectConfData.CreateAttr("NotOnOrAfter", notOnOrAfter)
-	subjectConfData.CreateAttr("Recipient", "https://dev-ejtl988w.auth0.com/login/callback?connection=auth0-as-sp")
+	subjectConfData.CreateAttr("Recipient", recipient)
 	subjectConfData.CreateAttr("InResponseTo", requestId)
 }
 
-func addConditions(assertionEl *etree.Element, notOnOrAfter string) {
+func addConditions(assertionEl *etree.Element, notOnOrAfter string, audience string) {
 	conditions := assertionEl.CreateElement("saml:Conditions")
 	conditions.CreateAttr("NotBefore", time.Now().Add(-1*time.Minute).Format(time.RFC3339))
 	conditions.CreateAttr("NotOnOrAfter", notOnOrAfter)
 	audRest := conditions.CreateElement("saml:AudienceRestriction")
 	aud := audRest.CreateElement("saml:Audience")
-	aud.CreateText("urn:auth0:dev-ejtl988w:auth0-as-sp")
+	aud.CreateText(audience)
 }
 
 func addAuthStatements(assertionEl *etree.Element, issueTime string) {
 	authnStmt := assertionEl.CreateElement("saml:AuthnStatement")
 	authnStmt.CreateAttr("AuthnInstant", issueTime)
 	authnStmt.CreateAttr("SessionIndex", "_NOSESSION_")
-	authCtx := authnStmt.CreateElement("saml:AuthnContex")
+	authCtx := authnStmt.CreateElement("saml:AuthnContext")
 	authCtxRef := authCtx.CreateElement("saml:AuthnContextClassRef")
 	authCtxRef.CreateText("urn:oasis:names:tc:SAML:2.0:ac:classes:unspecified")
 }

@@ -1,15 +1,18 @@
+# A toy IDP 
 # Port at which the Service Provider is accessible.
 # Changing the port would require you to change the settings of IDP since
 # the assertion is sent to the Service Provide URL which will include this port
 port: 5678
-# Host at which the Service Provider is accessible.
-# Changing the host would require you to change the settings of IDP since
-# the assertion is sent to the Service Provide URL which will include this host
-
+# Host at which the Identity Provider is accessible.
+# Changing the host would require you to change the settings of Service Provider
 host: "idp.samltools.com"
 # http or https
 protocol : "http"
 logon_path: "/logon"
+# Service Provider ACS URL where assertion is sent.
+# Its a toy IDP so only works with single Service Provider (for now)
+# Default is the value this has been tested with
+acs_url: "https://dev-ejtl988w.auth0.com/login/callback?connection=auth0-as-sp"
 
 
 

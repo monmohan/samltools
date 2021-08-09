@@ -67,8 +67,8 @@ func TestCreateAssertion(t *testing.T) {
 	//add Issuer
 	asEl.CreateElement("saml:Issuer").CreateText("http://idp.samltools.com")
 
-	addSubject(asEl, requestId, notOnOrAfter)
-	addConditions(asEl, notOnOrAfter)
+	addSubject(asEl, requestId, notOnOrAfter, "urn:auth0:dev-ejtl988w:auth0-as-sp")
+	addConditions(asEl, notOnOrAfter, "https://dev-ejtl988w.auth0.com/login/callback?connection=auth0-as-sp")
 	addAuthStatements(asEl, issueTime)
 
 	attrStmts := asEl.CreateElement("saml:AttributeStatement")
