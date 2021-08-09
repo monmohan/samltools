@@ -5,20 +5,21 @@ import (
 	"compress/flate"
 	"encoding/base64"
 	"fmt"
+	"html/template"
 	"io"
 	"log"
-	"math/rand"
 	"net/http"
 	"os"
-	"time"
 
 	"github.com/beevik/etree"
+	"github.com/monmohan/samltools"
 	"github.com/spf13/viper"
 )
 
 func handleLogonRequest(w http.ResponseWriter, req *http.Request) {
 
 	authnReq := req.URL.Query().Get("SAMLRequest")
+	relayState := req.URL.Query().Get("RelayState")
 
 	athnReqBytes, err := decodeSAMLRequest(authnReq)
 	if err != nil {
@@ -34,11 +35,19 @@ func handleLogonRequest(w http.ResponseWriter, req *http.Request) {
 	doc.WriteTo(os.Stdout)
 
 	reqEl := doc.FindElement("./samlp:AuthnRequest")
-	fmt.Println(reqEl.SelectAttr("ID").Value)
+	inResponseTo := reqEl.SelectAttr("ID").Value
 
-}
-
-func generateSAMLResponse(inResponseTo string) {
+	fmt.Printf("generating response for request ID %s\n", inResponseTo)
+	assertion, err := samltools.CreateSAMLResponse(inResponseTo)
+	fmt.Printf("\n------Assertion------\n\n%s\n--------END-----\n\n", assertion)
+	if err != nil {
+		fmt.Printf("Error generating assertion %s", err.Error())
+	}
+	t, err := template.ParseFiles("../pages/idpresp.html")
+	if err != nil {
+		fmt.Printf("Error generating template %s", err.Error())
+	}
+	t.Execute(w, map[string]string{"Base64Assertion": template.HTMLEscapeString(assertion), "RelayState": relayState})
 
 }
 
@@ -47,19 +56,19 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to read config file, %s", err.Error())
 	}
-	http.HandleFunc("/logon", handleLogonRequest)
+	http.HandleFunc(viper.GetString("logon_path"), handleLogonRequest)
 	fs := http.FileServer(http.Dir("../pages"))
 	http.Handle("/pages/", http.StripPrefix("/pages/", fs))
-	rand.Seed(time.Now().UnixNano())
-	serverUrl := fmt.Sprintf("%s:%v", viper.GetString("idp_host"), viper.GetInt("port"))
+	serverUrl := fmt.Sprintf("%s:%v", viper.GetString("host"), viper.GetInt("port"))
 	fmt.Printf("Server URL : %s", serverUrl)
+	fmt.Printf("Logon URL : %s", fmt.Sprintf("%s%s", serverUrl, viper.GetString("logon_path")))
 	log.Fatal(http.ListenAndServe(serverUrl, nil))
 
 }
 
 func config() error {
-	viper.SetConfigName("spconfig")
-	viper.SetConfigFile("../config/spconfig.yaml")
+	viper.SetConfigName("idpconfig")
+	viper.SetConfigFile("../config/idpconfig.yaml")
 	return viper.ReadInConfig()
 }
 
