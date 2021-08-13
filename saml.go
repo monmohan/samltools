@@ -16,6 +16,11 @@ import (
 	dsig "github.com/russellhaering/goxmldsig"
 )
 
+var (
+	xmlns_saml = "xmlns:saml"
+	xmlns_xsi  = "xmlns:xsi"
+)
+
 //IDP cert, hardcode for now
 var Certb64 = `MIIDtDCCApwCCQCjWnFcIynj3DANBgkqhkiG9w0BAQsFADCBmzELMAkGA1UEBhMCU0cxCzAJBgNVBAgMAlNHMQswCQYDVQQHDAJTRzEWMBQGA1UECgwNaWRwLnNhbWx0b29sczEbMBkGA1UECwwSaWRwLnNhbWx0b29scy5pbXBsMRowGAYDVQQDDBFpZHAuc2FtbHRvb2xzLmNvbTEhMB8GCSqGSIb3DQEJARYSbW9ubW9oYW5AZ21haWwuY29tMB4XDTIxMDcyNjEzNDAxOFoXDTIyMDcyNjEzNDAxOFowgZsxCzAJBgNVBAYTAlNHMQswCQYDVQQIDAJTRzELMAkGA1UEBwwCU0cxFjAUBgNVBAoMDWlkcC5zYW1sdG9vbHMxGzAZBgNVBAsMEmlkcC5zYW1sdG9vbHMuaW1wbDEaMBgGA1UEAwwRaWRwLnNhbWx0b29scy5jb20xITAfBgkqhkiG9w0BCQEWEm1vbm1vaGFuQGdtYWlsLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJp86VwT5M+APXg7gjN7suJSF2ikanKplsM5S+/hGKuPUwUoNp+9urkRXwRyLTSkB12O/kwa8hlcFK1Cvlx9durfwp/B2h39hHEiXrhiIpbswjzPbZRWAts8FDmxLKU2vb9T8K9ZLTv4IiqtWC70eeFg4iVqQ6/pkHCpFLUfoBbNdEsqGCJO6uo5ivt8cPvlf52iJKFB55R2KQsEDxOqoUxrCeIhEY/mGoSd3LvqBSypwv4dNdpwWEavkyb7f8sWm98Rf4l/MND9evRGSII7g7xLBvjbXMQeZSVXL4bpFCGDsGjuKViTrjBJ2lvYEPrMlPDr0NjFK9ipe9NYYUiXBakCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAEAM0gblUq0KS3tr1qyGtQ8wp6NemoOua22iaZokRzjUi6XOHdHwMXZ+wcm5yUEaqgX/o+ZJoiEax7wNl2azJk/zHWwpxvfzScrYhvof/JintY8jVBQQIfbOotQ2xENVgw2//YS0VHrz10+8lFtXi1cqxK38OagNdG/lXLj8n0hV+RVlabLAYk8EQ5wUZrVBbvcnLBM+u7sHM+QlbAlIgu06QJiHg3YfnE3GdjgZxDuXjHXPHk5LNhhoFGwJdtDhje0+FF+uD+eCBLtsrZJx3uSuBOOpUF3Dhoe+4cVZx1UM8AHW3q8LVMf02vAu2NIfX1r51XoiQcHsefMDMY33MYg==`
 
@@ -85,7 +90,7 @@ func defaultValidationContext(doc *etree.Document) (*dsig.ValidationContext, err
 	return validationContext, nil
 }
 
-func CreateSAMLResponse(inRespTo string, recipient string, audience string) (string, error) {
+func CreateSAMLResponse(issuer string, inRespTo string, recipient string, audience string, signingCtx *dsig.SigningContext) (string, error) {
 	mrand.Seed(time.Now().UnixNano())
 
 	//create assertion
@@ -95,13 +100,13 @@ func CreateSAMLResponse(inRespTo string, recipient string, audience string) (str
 	requestId := inRespTo
 	doc := etree.NewDocument()
 	asEl := doc.CreateElement("saml:Assertion")
-	asEl.CreateAttr("xmlns:saml", "urn:oasis:names:tc:SAML:2.0:assertion")
+	asEl.CreateAttr(xmlns_saml, "urn:oasis:names:tc:SAML:2.0:assertion")
 	asEl.CreateAttr("Version", "2.0")
 	asEl.CreateAttr("ID", assertionID)
 	asEl.CreateAttr("IssueInstant", issueTime)
 
 	//add Issuer
-	asEl.CreateElement("saml:Issuer").CreateText("http://idp.samltools.com")
+	asEl.CreateElement("saml:Issuer").CreateText(issuer)
 
 	addSubject(asEl, requestId, notOnOrAfter, recipient)
 	addConditions(asEl, notOnOrAfter, audience)
@@ -109,19 +114,15 @@ func CreateSAMLResponse(inRespTo string, recipient string, audience string) (str
 
 	attrStmts := asEl.CreateElement("saml:AttributeStatement")
 	attrStmts.CreateAttr("xmlns", "http://www.w3.org/2001/XMLSchema")
-	attrStmts.CreateAttr("xmlns:xsi", "http://www.w3.org/2001/XMLSchema-instance")
+	attrStmts.CreateAttr(xmlns_xsi, "http://www.w3.org/2001/XMLSchema-instance")
 	createAttribute(attrStmts, "name", "IDPUser1")
 	createAttribute(attrStmts, "email", "dev.null.dump.1@gmail.com")
 	createAttribute(attrStmts, "userid", "IDPUser1")
 
 	samlResp := createSAMLResponseElement(asEl, requestId)
 
-	keyStore := NewIDPKeyStore()
-	ctx := dsig.NewDefaultSigningContext(keyStore)
-	ctx.Canonicalizer = dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
-
 	// Sign the element
-	signedElement, err := ctx.SignEnveloped(asEl)
+	signedElement, err := signingCtx.SignEnveloped(asEl)
 	if err != nil {
 		return "", perrors.Wrap(err, "Signature generation failed")
 	}
@@ -199,9 +200,9 @@ type IDPKeyStore struct {
 	cert []byte
 }
 
-func NewIDPKeyStore() dsig.X509KeyStore {
+func NewIDPKeyStore(pKeyFile string) dsig.X509KeyStore {
 	store := IDPKeyStore{}
-	pemBlock, _ := ioutil.ReadFile("../config/idp-samltools-privatekey.key")
+	pemBlock, _ := ioutil.ReadFile(pKeyFile)
 	block, _ := pem.Decode(pemBlock)
 	if block == nil {
 		panic("failed to parse PEM block containing the private key")

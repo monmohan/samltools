@@ -14,8 +14,11 @@ import (
 	"github.com/beevik/etree"
 	"github.com/monmohan/samltools"
 	perrors "github.com/pkg/errors"
+	dsig "github.com/russellhaering/goxmldsig"
 	"github.com/spf13/viper"
 )
+
+var defaultSigningContext *dsig.SigningContext
 
 func handleLogonRequest(w http.ResponseWriter, req *http.Request) {
 
@@ -61,8 +64,9 @@ func handleLogonRequest(w http.ResponseWriter, req *http.Request) {
 	fmt.Printf("Generating response for request ID = %s, audience=%s\n", inResponseTo.Value, audience)
 
 	acsUrl := viper.GetString("acs_url")
+	idpIssuer := fmt.Sprintf("%s//%s", viper.GetString("protocol"), viper.GetString("host"))
 
-	assertion, err := samltools.CreateSAMLResponse(inResponseTo.Value, acsUrl, audience)
+	assertion, err := samltools.CreateSAMLResponse(idpIssuer, inResponseTo.Value, acsUrl, audience, defaultSigningContext)
 	if err != nil {
 		badRequest(err, w)
 		return
@@ -84,6 +88,7 @@ func handleLogonRequest(w http.ResponseWriter, req *http.Request) {
 
 func main() {
 	err := config()
+	createDefaultSigningContext()
 	if err != nil {
 		log.Fatalf("Unable to read config file, %s", err.Error())
 	}
@@ -97,6 +102,13 @@ func main() {
 
 }
 
+func createDefaultSigningContext() {
+	keyStore := samltools.NewIDPKeyStore(viper.GetString("private_key_file"))
+	defaultSigningContext = dsig.NewDefaultSigningContext(keyStore)
+	defaultSigningContext.Canonicalizer = dsig.MakeC14N10ExclusiveCanonicalizerWithPrefixList("")
+
+}
+
 func config() error {
 	viper.SetConfigName("idpconfig")
 	viper.SetConfigFile("../config/idpconfig.yaml")
@@ -104,6 +116,7 @@ func config() error {
 }
 
 func decodeSAMLRequest(req string) (decoded []byte, err error) {
+	fmt.Printf("\nRaw SAML Request %s\n", req)
 
 	data, err := base64.StdEncoding.DecodeString(string(req))
 	if err != nil {

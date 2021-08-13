@@ -5,6 +5,9 @@
 *.so
 *.dylib
 
+#Private Key file
+*-privatekey.key
+
 # Test binary, built with `go test -c`
 *.test
 

@@ -81,7 +81,7 @@ func TestCreateAssertion(t *testing.T) {
 	samlResp := createSAMLResponseElement(asEl, requestId)
 
 	//randomKeyStore := dsig.RandomKeyStoreForTest()
-	randomKeyStore := NewIDPKeyStore()
+	randomKeyStore := NewIDPKeyStore("./config/idp-samltools-privatekey.key")
 	ctx := dsig.NewDefaultSigningContext(randomKeyStore)
 	// Sign the element
 	signedElement, err := ctx.SignEnveloped(asEl)
