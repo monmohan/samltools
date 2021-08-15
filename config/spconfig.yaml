@@ -1,6 +1,8 @@
 # Identity Provider Single Sign-On URL. 
 # By default its configured to use the AuthO IDP this tutorial was tested with
 ssoUrl: "https://dev-ejtl988w.auth0.com/samlp/lqrbWWMYc25UrCiYA5Pt06U625c4K6DO"
+# Okta URL
+# ssoUrl: "https://adsktestpre/app/autodesk-test_monmohansamltoolssp_1/exk10y9wxt2mMZNT70h8/sso/saml"
 # Port at which the Service Provider is accessible.
 # Changing the port would require you to change the settings of IDP since
 # the assertion is sent to the Service Provide URL which will include this port
@@ -12,6 +14,13 @@ port: 4567
 host: "sp.samltools.com"
 # http or https
 protocol : "http"
-idp_host: "idp.samltools.com"
-sp_acs_url: "https://dev-ejtl988w.auth0.com/p/samlp/5aybgAvq"
+issuer: "urn:msingh.samltools:sp"
+# Auth0 cert
+idp_cert : "../config/dev-ejtl988w.cer"
+# Okta cert
+# idp_cert : "../config/okta.cert"
+
+
+
+
 

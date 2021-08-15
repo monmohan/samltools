@@ -1,0 +1,21 @@
+# A toy IDP 
+# Port at which the Service Provider is accessible.
+# Changing the port would require you to change the settings of IDP since
+# the assertion is sent to the Service Provide URL which will include this port
+port: 5678
+# Host at which the Identity Provider is accessible.
+# Changing the host would require you to change the settings of Service Provider
+host: "idp.samltools.com"
+# http or https
+protocol : "http"
+logon_path: "/logon"
+# Service Provider ACS URL where assertion is sent.
+# Its a toy IDP and only works with single Service Provider (for now)
+# Default is the value this has been tested with. Change it to point to a different ACS URL
+acs_url: "https://dev-ejtl988w.auth0.com/login/callback?connection=auth0-as-sp"
+# This is not shared in the repo. Create the key using openssl utility
+# openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout idp-samltools-privatekey.key -out idp-samltools-cert.crt
+private_key_file : "../config/idp-samltools-privatekey.key"
+
+
+
