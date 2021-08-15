@@ -13,6 +13,8 @@ logon_path: "/logon"
 # Its a toy IDP and only works with single Service Provider (for now)
 # Default is the value this has been tested with. Change it to point to a different ACS URL
 acs_url: "https://dev-ejtl988w.auth0.com/login/callback?connection=auth0-as-sp"
+# This is not shared in the repo. Create the key using openssl utility
+# openssl req -x509 -sha256 -nodes -days 365 -newkey rsa:2048 -keyout idp-samltools-privatekey.key -out idp-samltools-cert.crt
 private_key_file : "../config/idp-samltools-privatekey.key"
 
 

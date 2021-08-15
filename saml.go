@@ -14,6 +14,7 @@ import (
 	"github.com/beevik/etree"
 	perrors "github.com/pkg/errors"
 	dsig "github.com/russellhaering/goxmldsig"
+	"github.com/russellhaering/goxmldsig/etreeutils"
 )
 
 var (
@@ -21,7 +22,7 @@ var (
 	xmlns_xsi  = "xmlns:xsi"
 )
 
-//IDP cert, hardcode for now
+//Test Cert
 var Certb64 = `MIIDtDCCApwCCQCjWnFcIynj3DANBgkqhkiG9w0BAQsFADCBmzELMAkGA1UEBhMCU0cxCzAJBgNVBAgMAlNHMQswCQYDVQQHDAJTRzEWMBQGA1UECgwNaWRwLnNhbWx0b29sczEbMBkGA1UECwwSaWRwLnNhbWx0b29scy5pbXBsMRowGAYDVQQDDBFpZHAuc2FtbHRvb2xzLmNvbTEhMB8GCSqGSIb3DQEJARYSbW9ubW9oYW5AZ21haWwuY29tMB4XDTIxMDcyNjEzNDAxOFoXDTIyMDcyNjEzNDAxOFowgZsxCzAJBgNVBAYTAlNHMQswCQYDVQQIDAJTRzELMAkGA1UEBwwCU0cxFjAUBgNVBAoMDWlkcC5zYW1sdG9vbHMxGzAZBgNVBAsMEmlkcC5zYW1sdG9vbHMuaW1wbDEaMBgGA1UEAwwRaWRwLnNhbWx0b29scy5jb20xITAfBgkqhkiG9w0BCQEWEm1vbm1vaGFuQGdtYWlsLmNvbTCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAJp86VwT5M+APXg7gjN7suJSF2ikanKplsM5S+/hGKuPUwUoNp+9urkRXwRyLTSkB12O/kwa8hlcFK1Cvlx9durfwp/B2h39hHEiXrhiIpbswjzPbZRWAts8FDmxLKU2vb9T8K9ZLTv4IiqtWC70eeFg4iVqQ6/pkHCpFLUfoBbNdEsqGCJO6uo5ivt8cPvlf52iJKFB55R2KQsEDxOqoUxrCeIhEY/mGoSd3LvqBSypwv4dNdpwWEavkyb7f8sWm98Rf4l/MND9evRGSII7g7xLBvjbXMQeZSVXL4bpFCGDsGjuKViTrjBJ2lvYEPrMlPDr0NjFK9ipe9NYYUiXBakCAwEAATANBgkqhkiG9w0BAQsFAAOCAQEAEAM0gblUq0KS3tr1qyGtQ8wp6NemoOua22iaZokRzjUi6XOHdHwMXZ+wcm5yUEaqgX/o+ZJoiEax7wNl2azJk/zHWwpxvfzScrYhvof/JintY8jVBQQIfbOotQ2xENVgw2//YS0VHrz10+8lFtXi1cqxK38OagNdG/lXLj8n0hV+RVlabLAYk8EQ5wUZrVBbvcnLBM+u7sHM+QlbAlIgu06QJiHg3YfnE3GdjgZxDuXjHXPHk5LNhhoFGwJdtDhje0+FF+uD+eCBLtsrZJx3uSuBOOpUF3Dhoe+4cVZx1UM8AHW3q8LVMf02vAu2NIfX1r51XoiQcHsefMDMY33MYg==`
 
 type Issuer struct {
@@ -39,55 +40,33 @@ type AuthnRequest struct {
 }
 
 func ValidateAssertion(base64EncResp string, validationContext *dsig.ValidationContext) error {
+
 	samlResp, err := base64.StdEncoding.DecodeString(base64EncResp)
 	if err != nil {
 		return err
 	}
 	doc := etree.NewDocument()
 	if err := doc.ReadFromBytes(samlResp); err != nil {
-		return err
+		return perrors.Wrap(err, "Failed to create XML from decoded bytes")
+	}
+	var assertionEl *etree.Element
+	etreeutils.NSFindIterate(doc.Root(), "urn:oasis:names:tc:SAML:2.0:assertion", "Assertion", func(n etreeutils.NSContext, e *etree.Element) error {
+		fmt.Printf("Found Assertion element %v\n", e)
+		assertionEl = e
+		return etreeutils.ErrTraversalHalted
+	})
+	if assertionEl == nil {
+		return fmt.Errorf("assertion element not found")
 	}
 
-	if validationContext == nil {
-		validationContext, err = defaultValidationContext(doc)
-		if err != nil {
-			return err
-		}
-	}
-
-	el := doc.Root().FindElement("./saml:Assertion")
-	elem, err := validationContext.Validate(el)
+	elem, err := validationContext.Validate(assertionEl)
 	if err != nil {
-		return fmt.Errorf("Error validationContext, transformed =%v, Err=%s", elem, err)
+		return perrors.Wrap(err, fmt.Sprintf("Error validationContext, transformed =%v", elem))
 
 	}
+
 	return nil
 
-}
-
-func defaultValidationContext(doc *etree.Document) (*dsig.ValidationContext, error) {
-	cert64El := doc.FindElement("//saml:Assertion/Signature/KeyInfo/X509Data/X509Certificate")
-	if cert64El == nil {
-		return nil, fmt.Errorf("No Certificate Info found to match signature.")
-	}
-	certb64 := cert64El.Text()
-	derBytesCert, err := base64.StdEncoding.DecodeString(certb64)
-	if err != nil {
-		return nil, err
-	}
-
-	cert, err := x509.ParseCertificate(derBytesCert)
-	if err != nil {
-		return nil, fmt.Errorf("x509 parse err %s\n", err.Error())
-
-	}
-	certificateStore := dsig.MemoryX509CertificateStore{
-		Roots: []*x509.Certificate{cert},
-	}
-
-	validationContext := dsig.NewDefaultValidationContext(&certificateStore)
-	validationContext.IdAttribute = "ID"
-	return validationContext, nil
 }
 
 func CreateSAMLResponse(issuer string, inRespTo string, recipient string, audience string, signingCtx *dsig.SigningContext) (string, error) {
@@ -221,4 +200,31 @@ func NewIDPKeyStore(pKeyFile string) dsig.X509KeyStore {
 
 func (is *IDPKeyStore) GetKeyPair() (privateKey *rsa.PrivateKey, cert []byte, err error) {
 	return is.key, is.cert, nil
+}
+
+func CreateValidationContextFromCertFile(certFile string) (*dsig.ValidationContext, error) {
+	pemBlock, err := ioutil.ReadFile(certFile)
+	if err != nil {
+		return nil, perrors.Wrap(err, "Failed to read idp_cert file")
+	}
+
+	block, rest := pem.Decode(pemBlock)
+	if block == nil || block.Type != "CERTIFICATE" {
+		return nil, fmt.Errorf("unable to read the pem encoded block")
+	}
+
+	cert, err := x509.ParseCertificate(block.Bytes)
+	if err != nil {
+		return nil, perrors.Wrap(err, "x509 parse err")
+
+	}
+	fmt.Printf("Got a %T, with remaining data: %q\n", cert, rest)
+
+	certificateStore := dsig.MemoryX509CertificateStore{
+		Roots: []*x509.Certificate{cert},
+	}
+
+	validationContext := dsig.NewDefaultValidationContext(&certificateStore)
+	validationContext.IdAttribute = "ID"
+	return validationContext, nil
 }

@@ -14,17 +14,25 @@ import (
 	"time"
 
 	"github.com/monmohan/samltools"
+	dsig "github.com/russellhaering/goxmldsig"
 	"github.com/spf13/viper"
 )
+
+var defaultValidationContext *dsig.ValidationContext
 
 func samlAssertionHandler(w http.ResponseWriter, req *http.Request) {
 	var err error
 	req.ParseForm()
 	assertion := req.Form.Get("SAMLResponse")
-	err = samltools.ValidateAssertion(assertion, nil)
-	if err != nil {
-		//Don't fail the request, just log it for now
-		fmt.Printf("Signature Validation failed \n %s \n", err.Error())
+
+	fmt.Printf("\n DEBUG: Raw SAML Assertion\n %s\n", assertion)
+
+	if defaultValidationContext != nil {
+		err = samltools.ValidateAssertion(assertion, defaultValidationContext)
+		if err != nil {
+			//Don't fail the request, just log it for now
+			fmt.Printf("Signature Validation failed \n %s \n", err.Error())
+		}
 	}
 
 	assertion, err = decodeSAMLResponse(assertion)
@@ -46,7 +54,7 @@ func generateSAMLRequest(w http.ResponseWriter, req *http.Request) {
 		Version:         "2.0",
 		Issuer: samltools.Issuer{
 			Namespace: "urn:oasis:names:tc:SAML:2.0:assertion",
-			Value:     fmt.Sprintf("%s://%s", viper.GetString("protocol"), viper.GetString("host"))},
+			Value:     viper.GetString("issuer")},
 	}
 	output, err := xml.MarshalIndent(samlreq, "  ", "    ")
 	decoded := req.URL.Query().Get("showdecoded")
@@ -77,13 +85,18 @@ func main() {
 	if err != nil {
 		log.Fatalf("Unable to read config file, %s", err.Error())
 	}
+	defaultValidationContext, err = CreateDefaultValidationContext()
+	if err != nil {
+		log.Fatalf("Unable to read idp cert, Signature Validations will fail, %s", err.Error())
+	}
 	http.HandleFunc("/assertion", samlAssertionHandler)
 	http.HandleFunc("/issue", generateSAMLRequest)
 	fs := http.FileServer(http.Dir("../pages"))
 	http.Handle("/pages/", http.StripPrefix("/pages/", fs))
 	rand.Seed(time.Now().UnixNano())
 	serverUrl := fmt.Sprintf("%s:%v", viper.GetString("host"), viper.GetInt("port"))
-	fmt.Printf("Server URL : %s", serverUrl)
+	fmt.Printf("Server URL : %s\n", serverUrl)
+	fmt.Printf("Assertion URL : http://%s/assertion \n", serverUrl)
 	log.Fatal(http.ListenAndServe(serverUrl, nil))
 
 }
@@ -92,6 +105,11 @@ func config() error {
 	viper.SetConfigName("spconfig")
 	viper.SetConfigFile("../config/spconfig.yaml")
 	return viper.ReadInConfig()
+}
+
+func CreateDefaultValidationContext() (*dsig.ValidationContext, error) {
+	certFile := viper.GetString("idp_cert")
+	return samltools.CreateValidationContextFromCertFile(certFile)
 }
 
 func decodeSAMLRequest(req string) error {
