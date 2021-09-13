@@ -8,9 +8,9 @@
  </head>
 <body>
    <form action="{{.ACSUrl}}" method="post">
-        <input type="text" rows="6" cols="150" id="SAMLResponse" name="SAMLResponse" value= "{{.Base64Assertion}}"></input>
-        <input type="text" rows="6" cols="150" id="RelayState" name="RelayState" value= "{{.RelayState}}"></input>
-        <button type="submit">Submit Form</button>
+        <div><input type="text" rows="6" cols="150" id="SAMLResponse" name="SAMLResponse" value= "{{.Base64Assertion}}"> SAML Response</input></div>
+        <div><input type="text" rows="6" cols="150" id="RelayState" name="RelayState" value= "{{.RelayState}}"> RelayState </input></div>
+        <div><button type="submit">Submit Form</button></div>
 
     </form>
     
